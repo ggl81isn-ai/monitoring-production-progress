@@ -14,6 +14,15 @@
 | `LINE_IMAGE_ORIGINAL_URL` | 任意 | 画像メッセージ用（HTTPS）。未設定ならテキストのみ |
 | `LINE_IMAGE_PREVIEW_URL` | 任意 | プレビュー用画像 URL |
 
+### Variables（タグの絞り込み）
+
+| Name | 例 | 説明 |
+|------|-----|------|
+| `NOTION_TAG_PROPERTY` | `タグ` | タグ列の表示名（未設定時はコード側で `タグ` を仮定） |
+| `NOTION_TAG_FILTER_MODE` | `non_empty` | `non_empty`（既定）/ `value` / `both` |
+| `NOTION_TAG_VALUE` | `制作` | `value` または `both` のときに使用 |
+| `NOTION_SKIP_TAG_FILTER` | `true` | `true` のときだけタグ条件なしで全件（通常は空のまま） |
+
 `NOTION_TOKEN` と `NOTION_DATABASE_ID` の両方があるときだけ `npm run notion:payload` を実行します。無い場合は `data/sample-report.json` をコピーしてビルドします。
 
 ## 変数（Repository variables / `vars`）

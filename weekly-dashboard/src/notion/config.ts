@@ -1,4 +1,12 @@
 /**
+ * タグ列の絞り込み方（Notion API の database query filter）
+ * - non_empty: タグが1つ以上付いている行だけ（既定）
+ * - value: NOTION_TAG_VALUE のみ一致（従来の「制作」など1タグに限定）
+ * - both: 空でない かつ NOTION_TAG_VALUE を含む／一致
+ */
+export type NotionTagFilterMode = "non_empty" | "value" | "both";
+
+/**
  * Notion → ペイロード変換用の環境変数（名前は README / .env.example を参照）
  */
 export interface NotionMappingEnv {
@@ -7,6 +15,8 @@ export interface NotionMappingEnv {
   /** multi_select / select のプロパティ表示名。skipTagFilter 時は null */
   tagProperty: string | null;
   tagValue: string;
+  /** `non_empty` 既定: タグが空でない行だけ取得し DB 全件を避ける */
+  tagFilterMode: NotionTagFilterMode;
   skipTagFilter: boolean;
   /** status / select の「完了」判定用。カンマ区切り（例: 完了,Done） */
   doneStatusValues: Set<string>;
@@ -45,21 +55,24 @@ export function readNotionMappingEnv(): NotionMappingEnv {
   if (!token) throw new Error("NOTION_TOKEN が未設定です。");
   if (!databaseId) throw new Error("NOTION_DATABASE_ID が未設定です。");
 
-  /** 明示 true / 1、または「タグ列名が未指定で false も付いていない」ときはタグ絞り込みしない（CI の初期状態向け） */
   const explicitSkipTag =
     process.env.NOTION_SKIP_TAG_FILTER === "1" ||
     process.env.NOTION_SKIP_TAG_FILTER === "true";
-  const explicitRequireTag =
-    process.env.NOTION_SKIP_TAG_FILTER === "0" ||
-    process.env.NOTION_SKIP_TAG_FILTER === "false";
 
-  const tagProperty = process.env.NOTION_TAG_PROPERTY?.trim() || null;
-  const skipTagFilter =
-    explicitSkipTag || (!explicitRequireTag && tagProperty == null);
+  const skipTagFilter = explicitSkipTag;
+  const tagPropertyRaw = process.env.NOTION_TAG_PROPERTY?.trim() || "";
+  const effectiveTagProperty = skipTagFilter ? null : (tagPropertyRaw || "タグ");
 
-  const effectiveTagProperty = skipTagFilter
-    ? null
-    : (tagProperty ?? "タグ");
+  const modeRaw = process.env.NOTION_TAG_FILTER_MODE?.trim().toLowerCase() ?? "";
+  let tagFilterMode: NotionTagFilterMode;
+  if (modeRaw === "value") tagFilterMode = "value";
+  else if (modeRaw === "both") tagFilterMode = "both";
+  else if (!modeRaw || modeRaw === "non_empty") tagFilterMode = "non_empty";
+  else {
+    throw new Error(
+      "NOTION_TAG_FILTER_MODE は non_empty / value / both のいずれかにしてください。"
+    );
+  }
 
   const defaultMilestoneLabels: [string, string, string, string] = [
     "要件・方針FIX",
@@ -89,6 +102,7 @@ export function readNotionMappingEnv(): NotionMappingEnv {
     databaseId,
     tagProperty: effectiveTagProperty,
     tagValue: process.env.NOTION_TAG_VALUE?.trim() || "制作",
+    tagFilterMode,
     skipTagFilter,
     doneStatusValues: parseCsvSet(
       process.env.NOTION_DONE_STATUS_VALUES,

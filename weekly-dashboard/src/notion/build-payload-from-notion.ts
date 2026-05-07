@@ -78,24 +78,73 @@ export async function buildWeeklyPayloadFromNotion(
 
   let filter: QueryDatabaseParameters["filter"] | undefined;
   if (!env.skipTagFilter && env.tagProperty) {
-    const tagMeta = getPropertyMetaByName(dbProps, env.tagProperty);
+    const tagPropName = env.tagProperty;
+    const tagMeta = getPropertyMetaByName(dbProps, tagPropName);
     if (!tagMeta) {
-      throw new Error(`タグプロパティ「${env.tagProperty}」がデータベースに見つかりません。`);
+      throw new Error(`タグプロパティ「${tagPropName}」がデータベースに見つかりません。`);
     }
-    if (tagMeta.type === "multi_select") {
-      filter = {
-        property: env.tagProperty,
-        multi_select: { contains: env.tagValue },
-      };
-    } else if (tagMeta.type === "select") {
-      filter = {
-        property: env.tagProperty,
-        select: { equals: env.tagValue },
-      };
-    } else {
+
+    const nonEmptyFilter = (): Extract<
+      QueryDatabaseParameters["filter"],
+      { property: string }
+    > => {
+      if (tagMeta.type === "multi_select") {
+        return {
+          property: tagPropName,
+          multi_select: { is_not_empty: true },
+        };
+      }
+      if (tagMeta.type === "select") {
+        return {
+          property: tagPropName,
+          select: { is_not_empty: true },
+        };
+      }
       throw new Error(
-        `タグプロパティ「${env.tagProperty}」は multi_select または select である必要があります（実際は ${tagMeta.type}）。`
+        `タグ列「${tagPropName}」は multi_select か select である必要があります（実際は ${tagMeta.type}）。`
       );
+    };
+
+    const valueFilter = (): Extract<
+      QueryDatabaseParameters["filter"],
+      { property: string }
+    > | null => {
+      const v = env.tagValue?.trim();
+      if (!v) return null;
+      if (tagMeta.type === "multi_select") {
+        return {
+          property: tagPropName,
+          multi_select: { contains: v },
+        };
+      }
+      if (tagMeta.type === "select") {
+        return {
+          property: tagPropName,
+          select: { equals: v },
+        };
+      }
+      return null;
+    };
+
+    const mode = env.tagFilterMode;
+    if (mode === "non_empty") {
+      filter = nonEmptyFilter();
+    } else if (mode === "value") {
+      const vf = valueFilter();
+      if (!vf) {
+        throw new Error(
+          "NOTION_TAG_FILTER_MODE=value のときは NOTION_TAG_VALUE にタグ名を設定してください。"
+        );
+      }
+      filter = vf;
+    } else {
+      const vf = valueFilter();
+      if (!vf) {
+        throw new Error(
+          "NOTION_TAG_FILTER_MODE=both のときは NOTION_TAG_VALUE を設定してください。"
+        );
+      }
+      filter = { and: [nonEmptyFilter(), vf] };
     }
   }
 

@@ -74,7 +74,12 @@ npm run screenshot
 
 ### GitHub Actions でのタグ
 
-Variables に **`NOTION_TAG_PROPERTY` を書いていない**場合は、**タグで絞り込まず DB 全件**を読みます（「制作」タグ未使用でも落ちない想定）。制作タグで絞りたくなったら、Repository variables に `NOTION_TAG_PROPERTY`（例: `タグ`）と `NOTION_TAG_VALUE`（例: `制作`）を設定し、必要なら `NOTION_SKIP_TAG_FILTER` を `false` にしてください。
+既定では **`NOTION_TAG_FILTER_MODE=non_empty`**（未設定も同じ）で、**タグ列に1つ以上付いている行だけ**を取得します。DB 全件は読みません。
+
+- 列名が `タグ` でない場合は Variables に **`NOTION_TAG_PROPERTY`** を設定する。
+- **特定の1タグ（例: 制作）だけ**にしたいときは `NOTION_TAG_FILTER_MODE=value` と **`NOTION_TAG_VALUE`** を設定する。
+- **「タグが付いている」かつ「制作を含む」**なら `NOTION_TAG_FILTER_MODE=both`。
+- どうしても全件読みに戻すときだけ **`NOTION_SKIP_TAG_FILTER=true`**（件数が多いと重いので注意）。
 
 ---
 
