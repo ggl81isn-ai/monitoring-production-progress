@@ -20,6 +20,8 @@ export interface NotionMappingEnv {
   skipTagFilter: boolean;
   /** status / select の「完了」判定用。カンマ区切り（例: 完了,Done） */
   doneStatusValues: Set<string>;
+  /** レポートで「進行中」として数えるステータス名（小文字化して照合）。完了セットと重複不可 */
+  inProgressStatusValues: Set<string>;
   /** null のとき完了率ベースの信号は常に「データなし」扱いに近い挙動 */
   statusProperty: string | null;
   /** 1〜4 の number 型、または select のいずれか */
@@ -42,6 +44,12 @@ export interface NotionMappingEnv {
 function parseCsvSet(s: string | undefined, fallback: string): Set<string> {
   const raw = (s ?? fallback).split(",").map((x) => x.trim()).filter(Boolean);
   return new Set(raw.map((x) => x.toLowerCase()));
+}
+
+function assertDisjointSets(a: Set<string>, b: Set<string>, msg: string): void {
+  for (const x of a) {
+    if (b.has(x)) throw new Error(msg.replace("{v}", x));
+  }
 }
 
 function parseCsvArray(s: string | undefined, fallback: string[]): string[] {
@@ -97,6 +105,20 @@ export function readNotionMappingEnv(): NotionMappingEnv {
     }
   }
 
+  const doneStatusValues = parseCsvSet(
+    process.env.NOTION_DONE_STATUS_VALUES,
+    "完了,Done,done"
+  );
+  const inProgressStatusValues = parseCsvSet(
+    process.env.NOTION_IN_PROGRESS_STATUS_VALUES,
+    "進行中"
+  );
+  assertDisjointSets(
+    doneStatusValues,
+    inProgressStatusValues,
+    "NOTION_DONE_STATUS_VALUES と NOTION_IN_PROGRESS_STATUS_VALUES に同じ値があります（{v}）。「進行中」は完了側に含めないでください。"
+  );
+
   return {
     token,
     databaseId,
@@ -104,10 +126,8 @@ export function readNotionMappingEnv(): NotionMappingEnv {
     tagValue: process.env.NOTION_TAG_VALUE?.trim() || "制作",
     tagFilterMode,
     skipTagFilter,
-    doneStatusValues: parseCsvSet(
-      process.env.NOTION_DONE_STATUS_VALUES,
-      "完了,Done,done"
-    ),
+    doneStatusValues,
+    inProgressStatusValues,
     statusProperty:
       process.env.NOTION_STATUS_DISABLE === "1" ||
       process.env.NOTION_STATUS_DISABLE === "true"

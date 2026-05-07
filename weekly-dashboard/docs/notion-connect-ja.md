@@ -84,6 +84,11 @@ npm run screenshot
 
 **注意:** Repository Variables に **`NOTION_TAG_FILTER_MODE=non_empty`** を入れたままだと件数が膨らみます。**削除するか `value` に変更**してください。
 
+### ステータス列と「進行中」
+
+- **完了**は `NOTION_DONE_STATUS_VALUES`（既定: `完了,Done,done`）に含まれる表示名だけです。**「進行中」は完了に含めない**でください（含めると設定時にエラーになります）。
+- **進行中の件数**は `NOTION_IN_PROGRESS_STATUS_VALUES`（既定: `進行中`）に一致するステータスを数え、週次の本文・キャプションに出します。英語ワークスペースなら `In progress` などをカンマ区切りで追加できます。
+
 ---
 
 ## セキュリティの注意

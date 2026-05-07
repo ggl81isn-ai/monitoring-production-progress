@@ -22,6 +22,7 @@
 | `NOTION_TAG_FILTER_MODE` | `value` | `value`（既定・「制作」等で絞る）/ `non_empty` / `both` |
 | `NOTION_TAG_VALUE` | `制作` | `value` または `both` のときに使用 |
 | `NOTION_SKIP_TAG_FILTER` | `true` | `true` のときだけタグ条件なしで全件（通常は空のまま） |
+| `NOTION_IN_PROGRESS_STATUS_VALUES` | `進行中` | 進行中件数の集計に使う（カンマ区切り可）。`NOTION_DONE_STATUS_VALUES` と重複不可 |
 
 `NOTION_TOKEN` と `NOTION_DATABASE_ID` の両方があるときだけ `npm run notion:payload` を実行します。無い場合は `data/sample-report.json` をコピーしてビルドします。
 
