@@ -59,7 +59,8 @@ npm run screenshot
 - `NOTION_TOKEN` + `NOTION_DATABASE_ID` が無い場合はサンプル JSON で HTML と PNG を生成します。
 - LINE は `LINE_CHANNEL_ACCESS_TOKEN` と `LINE_TO_USER_ID` があるときだけ送信（無ければ `push:line` がスキップ）。
 
-シークレット一覧: `docs/ci-secrets.md`
+シークレット一覧: `docs/ci-secrets.md`  
+成果物（Artifact）のダウンロード手順: `docs/github-artifacts-ja.md`
 
 ## データ形式（JSON）
 
