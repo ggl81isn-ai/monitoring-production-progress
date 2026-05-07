@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * data属性で切り替える見た目（マイルストーン完了／現在地、信号の点灯）
+ * ユーティリティだけだと冗長になるため @layer components に集約
+ */
+@layer components {
+  /* --- マイルストーン：完了（現在より左） --- */
+  #roadmap-visual[data-current-step="2"] [data-step="1"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="3"] [data-step="1"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="3"] [data-step="2"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="4"] [data-step="1"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="4"] [data-step="2"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="4"] [data-step="3"] .milestone-step__dot {
+    @apply relative border-teal-700 bg-teal-600;
+  }
+
+  #roadmap-visual[data-current-step="2"] [data-step="1"] .milestone-step__num,
+  #roadmap-visual[data-current-step="3"] [data-step="1"] .milestone-step__num,
+  #roadmap-visual[data-current-step="3"] [data-step="2"] .milestone-step__num,
+  #roadmap-visual[data-current-step="4"] [data-step="1"] .milestone-step__num,
+  #roadmap-visual[data-current-step="4"] [data-step="2"] .milestone-step__num,
+  #roadmap-visual[data-current-step="4"] [data-step="3"] .milestone-step__num {
+    @apply sr-only;
+  }
+
+  #roadmap-visual[data-current-step="2"] [data-step="1"] .milestone-step__dot::after,
+  #roadmap-visual[data-current-step="3"] [data-step="1"] .milestone-step__dot::after,
+  #roadmap-visual[data-current-step="3"] [data-step="2"] .milestone-step__dot::after,
+  #roadmap-visual[data-current-step="4"] [data-step="1"] .milestone-step__dot::after,
+  #roadmap-visual[data-current-step="4"] [data-step="2"] .milestone-step__dot::after,
+  #roadmap-visual[data-current-step="4"] [data-step="3"] .milestone-step__dot::after {
+    content: "✓";
+    @apply pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-extrabold leading-none text-white;
+  }
+
+  #roadmap-visual[data-current-step="2"] [data-step="1"] .milestone-step__label,
+  #roadmap-visual[data-current-step="3"] [data-step="1"] .milestone-step__label,
+  #roadmap-visual[data-current-step="3"] [data-step="2"] .milestone-step__label,
+  #roadmap-visual[data-current-step="4"] [data-step="1"] .milestone-step__label,
+  #roadmap-visual[data-current-step="4"] [data-step="2"] .milestone-step__label,
+  #roadmap-visual[data-current-step="4"] [data-step="3"] .milestone-step__label {
+    @apply font-semibold text-teal-800;
+  }
+
+  /* --- マイルストーン：現在地 --- */
+  #roadmap-visual[data-current-step="1"] [data-step="1"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="2"] [data-step="2"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="3"] [data-step="3"] .milestone-step__dot,
+  #roadmap-visual[data-current-step="4"] [data-step="4"] .milestone-step__dot {
+    @apply relative border-teal-600 bg-emerald-50 shadow-[0_0_0_4px_rgba(13,148,136,0.22)];
+  }
+
+  #roadmap-visual[data-current-step="1"] [data-step="1"] .milestone-step__num,
+  #roadmap-visual[data-current-step="2"] [data-step="2"] .milestone-step__num,
+  #roadmap-visual[data-current-step="3"] [data-step="3"] .milestone-step__num,
+  #roadmap-visual[data-current-step="4"] [data-step="4"] .milestone-step__num {
+    @apply text-teal-800;
+  }
+
+  #roadmap-visual[data-current-step="1"] [data-step="1"] .milestone-step__label,
+  #roadmap-visual[data-current-step="2"] [data-step="2"] .milestone-step__label,
+  #roadmap-visual[data-current-step="3"] [data-step="3"] .milestone-step__label,
+  #roadmap-visual[data-current-step="4"] [data-step="4"] .milestone-step__label {
+    @apply font-bold text-ink;
+  }
+
+  /* --- 信号：アクティブ灯 --- */
+  [data-signal="red"] .light--red,
+  [data-signal="yellow"] .light--yellow,
+  [data-signal="green"] .light--green {
+    @apply scale-105 opacity-100;
+  }
+
+  [data-signal="red"] .light--red {
+    @apply border-[3px] border-red-600 bg-red-100 shadow-[0_0_0_4px_rgba(220,38,38,0.15),0_8px_20px_rgba(220,38,38,0.2)];
+  }
+
+  [data-signal="yellow"] .light--yellow {
+    @apply border-[3px] border-yellow-600 bg-yellow-100 shadow-[0_0_0_4px_rgba(234,179,8,0.2),0_8px_20px_rgba(234,179,8,0.18)];
+  }
+
+  [data-signal="green"] .light--green {
+    @apply border-[3px] border-green-600 bg-green-100 shadow-[0_0_0_4px_rgba(34,197,94,0.2),0_8px_20px_rgba(34,197,94,0.18)];
+  }
+}

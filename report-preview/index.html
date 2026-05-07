@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自分用AIチャットボット — 進捗状況</title>
+  <link rel="stylesheet" href="tailwind.css" />
+</head>
+<body class="min-h-screen bg-[#f4f6f8] font-sans text-ink leading-relaxed antialiased">
+  <main
+    class="mx-auto max-w-report px-5 py-7 pb-10"
+    data-report-root
+    data-template-version="11"
+    data-project="personal-ai-chatbot"
+  >
+    <!-- ヘッダーカード -->
+    <header
+      class="relative mb-report overflow-hidden rounded-2xl bg-white px-report-x pb-5 pt-report-pt shadow-card before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-sky-200 before:via-violet-200 before:to-pink-200"
+      data-section="header"
+    >
+      <p class="mb-1.5 text-[0.8125rem] font-semibold tracking-wide text-teal-600" id="report-label" data-field="report-label">
+        週次レポート・自分用 / AIチャットボット
+      </p>
+      <h1 class="mb-3.5 text-2xl font-bold leading-snug tracking-tight sm:text-[1.5rem]" id="report-title" data-field="report-title">
+        自分用AIチャットボット — 進捗状況
+      </h1>
+      <p
+        class="mb-3.5 inline-block rounded-full bg-teal-100 px-3.5 py-1.5 text-[0.8125rem] font-semibold text-teal-800"
+        id="report-week-range"
+        data-field="week-range"
+      >
+        対象週 2026/05/04〜05/10
+      </p>
+      <div id="report-goal-summary" class="m-0 text-[0.9375rem]" data-field="goal-summary">
+        <p class="mb-1.5 font-semibold text-ink">今週の目標</p>
+        <ul class="m-0 list-none space-y-1 leading-relaxed text-muted">
+          <li data-field="goal-item-1">・ストリーミングを通しで動かす</li>
+          <li data-field="goal-item-2">・ツール呼びを2パターンまで組み込む</li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- 今週の進捗（信号） -->
+    <section
+      class="relative mb-report overflow-hidden rounded-2xl bg-white px-report-x pb-5 pt-report-x shadow-card before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-blue-400 before:to-violet-400 before:opacity-90"
+      data-section="signal"
+      aria-labelledby="signal-heading"
+    >
+      <h2 class="mb-report text-base font-bold text-ink" id="signal-heading" data-field="signal-section-title">今週の進捗</h2>
+      <div
+        class="mb-3 flex justify-center"
+        id="traffic-state"
+        data-field="traffic-state"
+        data-signal="red"
+        role="group"
+        aria-label="進捗信号"
+        aria-describedby="signal-caption"
+      >
+        <div
+          class="flex items-center justify-center gap-[18px] rounded-full border border-slate-200 bg-slate-100 px-7 py-3.5 max-[480px]:gap-3.5 max-[480px]:px-5 max-[480px]:py-3"
+        >
+          <span
+            class="light--red h-11 w-11 shrink-0 rounded-full border-2 border-red-400 bg-red-200 opacity-45 transition duration-200 max-[480px]:h-10 max-[480px]:w-10"
+            data-light="red"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="light--yellow h-11 w-11 shrink-0 rounded-full border-2 border-yellow-500 bg-yellow-100 opacity-45 transition duration-200 max-[480px]:h-10 max-[480px]:w-10"
+            data-light="yellow"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="light--green h-11 w-11 shrink-0 rounded-full border-2 border-green-500 bg-green-200 opacity-45 transition duration-200 max-[480px]:h-10 max-[480px]:w-10"
+            data-light="green"
+            aria-hidden="true"
+          ></span>
+        </div>
+      </div>
+      <p
+        class="mb-2 text-center text-sm font-semibold text-ink"
+        id="signal-status-label"
+        data-field="signal-status-label"
+      >
+        見立て：遅れ（赤）
+      </p>
+      <p class="m-0 text-center text-sm text-muted" id="signal-caption" data-field="signal-caption">
+        ストリーミングは一通り可。ツール呼びは「メモ検索」のみで、「今日の日付を返す」は未着手。
+      </p>
+    </section>
+
+    <!-- マイルストーン -->
+    <section
+      class="relative mb-report overflow-hidden rounded-2xl bg-white px-report-x pb-4 pt-report-x shadow-card before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-teal-400 before:to-indigo-400 before:opacity-95"
+      data-section="milestones"
+      aria-labelledby="milestone-heading"
+    >
+      <h2 class="mb-3 text-base font-bold text-ink" id="milestone-heading" data-field="milestone-heading">マイルストーン</h2>
+      <div
+        class="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+        id="roadmap-visual"
+        data-field="roadmap-visual"
+        data-current-step="2"
+        data-milestone-count="4"
+        role="region"
+        aria-labelledby="milestone-heading"
+      >
+        <div class="relative px-2.5 pb-1.5 pt-report-pt" data-field="milestone-track">
+          <div
+            class="pointer-events-none absolute left-[14%] right-[14%] top-[44px] h-1 rounded-sm bg-slate-200"
+            aria-hidden="true"
+          ></div>
+          <ol class="relative z-[1] m-0 flex list-none justify-between gap-0 p-0">
+            <li class="milestone-step min-w-0 flex-1 px-0.5 text-center" data-step="1">
+              <span
+                class="milestone-step__dot relative mx-auto mb-2 box-border flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-300 bg-white"
+                aria-hidden="true"
+              >
+                <span class="milestone-step__num text-sm font-bold leading-none text-slate-500">1</span>
+              </span>
+              <span class="milestone-step__label mx-auto block max-w-[5.5rem] text-xs font-semibold leading-tight text-slate-600 sm:max-w-none" id="milestone-label-1" data-field="milestone-label-1">要件・方針FIX</span>
+            </li>
+            <li class="milestone-step min-w-0 flex-1 px-0.5 text-center" data-step="2">
+              <span
+                class="milestone-step__dot relative mx-auto mb-2 box-border flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-300 bg-white"
+                aria-hidden="true"
+              >
+                <span class="milestone-step__num text-sm font-bold leading-none text-slate-500">2</span>
+              </span>
+              <span class="milestone-step__label mx-auto block max-w-[5.5rem] text-xs font-semibold leading-tight text-slate-600 sm:max-w-none" id="milestone-label-2" data-field="milestone-label-2">コア実装</span>
+            </li>
+            <li class="milestone-step min-w-0 flex-1 px-0.5 text-center" data-step="3">
+              <span
+                class="milestone-step__dot relative mx-auto mb-2 box-border flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-300 bg-white"
+                aria-hidden="true"
+              >
+                <span class="milestone-step__num text-sm font-bold leading-none text-slate-500">3</span>
+              </span>
+              <span class="milestone-step__label mx-auto block max-w-[5.5rem] text-xs font-semibold leading-tight text-slate-600 sm:max-w-none" id="milestone-label-3" data-field="milestone-label-3">検証・公開準備</span>
+            </li>
+            <li class="milestone-step min-w-0 flex-1 px-0.5 text-center" data-step="4">
+              <span
+                class="milestone-step__dot relative mx-auto mb-2 box-border flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-300 bg-white"
+                aria-hidden="true"
+              >
+                <span class="milestone-step__num text-sm font-bold leading-none text-slate-500">4</span>
+              </span>
+              <span class="milestone-step__label mx-auto block max-w-[5.5rem] text-xs font-semibold leading-tight text-slate-600 sm:max-w-none" id="milestone-label-4" data-field="milestone-label-4">運用・改善</span>
+            </li>
+          </ol>
+        </div>
+        <p class="milestone-caption m-0 border-t border-slate-200 bg-white px-3.5 py-2.5 pb-4 text-center text-[0.8125rem] leading-relaxed text-muted" id="milestone-caption" data-field="milestone-caption">
+          現在地：<strong class="font-bold text-teal-800">2. コア実装</strong>
+          <span class="text-muted"> — 進行中：UI・ツール連携</span>
+        </p>
+      </div>
+    </section>
+
+    <section
+      class="relative mb-report overflow-hidden rounded-2xl bg-white px-report-x pb-5 pt-report-sec shadow-card before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-sky-300 before:to-violet-300 before:opacity-80"
+      data-section="weekly-summary"
+      aria-labelledby="weekly-heading"
+    >
+      <h2 class="mb-report text-base font-bold text-ink" id="weekly-heading" data-field="weekly-heading">今週のまとめ</h2>
+      <p class="mb-2 text-[0.9375rem] font-semibold leading-snug text-ink" id="weekly-summary-lead" data-field="weekly-summary-lead">
+        ストリーミングは通しで可。ツール呼びは1/2本のみで、週の数値目標には届いていない。
+      </p>
+      <p class="m-0 text-[0.9375rem] leading-relaxed text-muted" id="weekly-summary" data-field="weekly-summary">
+        StreamlitでチャットUIのプロトを作り、OpenAI互換APIと逐次表示まで確認。Notionの「制作」タスクではバックエンド1本とSQLiteスキーマ案をマージ済み。一方、週初めの2本目ツールは未着手のまま、レビュー用の最小デモも未完成で週末に入った。
+      </p>
+    </section>
+
+    <section
+      class="relative mb-report overflow-hidden rounded-2xl bg-white px-report-x pb-5 pt-report-sec shadow-card before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-[3px] before:bg-gradient-to-r before:from-emerald-300 before:to-teal-300 before:opacity-80"
+      data-section="next-actions"
+      aria-labelledby="next-heading"
+    >
+      <h2 class="mb-report text-base font-bold text-ink" id="next-heading" data-field="next-heading">次週アクション</h2>
+      <ol class="m-0 list-none space-y-3 p-0 text-[0.9375rem] text-muted" id="next-actions-list" data-field="next-actions-list">
+        <li class="flex gap-3 border-l-2 border-teal-200 pl-3" data-action-id="a1">
+          <span class="w-6 shrink-0 font-bold text-teal-700">1</span>
+          <span class="min-w-0">「今日の日付を返す」ツールを追加し、LangChain（または同等）のエージェントから1往復通す</span>
+        </li>
+        <li class="flex gap-3 border-l-2 border-teal-200 pl-3" data-action-id="a2">
+          <span class="w-6 shrink-0 font-bold text-teal-700">2</span>
+          <span class="min-w-0">`.env` とAPIキー運用をREADMEに固定し、Notionの「制作」DBのブロッカー欄を空にできるか確認する</span>
+        </li>
+        <li class="flex gap-3 border-l-2 border-teal-200 pl-3" data-action-id="a3">
+          <span class="w-6 shrink-0 font-bold text-teal-700">3</span>
+          <span class="min-w-0">ストリーミング中のエラー表示だけ先に入れ、週次レビューで見せるデモの合格条件を1行で書く</span>
+        </li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>

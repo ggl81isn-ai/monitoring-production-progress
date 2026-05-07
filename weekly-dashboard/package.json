@@ -1,0 +1,28 @@
+{
+  "name": "weekly-production-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "週次アプリ制作進捗ダッシュボード — JSON から HTML を生成",
+  "scripts": {
+    "generate": "tsx src/generate.ts",
+    "notion:payload": "tsx src/notion-payload-cli.ts",
+    "screenshot": "tsx src/screenshot.ts",
+    "push:line": "tsx src/push-line.ts",
+    "build:weekly": "npm run notion:payload && npm run generate -- data/notion-output.json && npm run screenshot",
+    "build:weekly:sample": "npm run generate -- data/sample-report.json && npm run screenshot",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.15",
+    "cheerio": "^1.0.0",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "playwright": "^1.49.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

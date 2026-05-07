@@ -1,0 +1,98 @@
+# 週次ダッシュボード: CSS ビルド → ペイロード(JSON) → HTML → PNG
+# Notion のシークレットが無い場合は sample-report を使用します。
+
+name: Weekly dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 月曜 09:00 (JST) 前後 — GitHub は UTC のため 月 00:00 UTC
+    - cron: "0 0 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            report-preview/package-lock.json
+            weekly-dashboard/package-lock.json
+
+      - name: Install and build Tailwind (report-preview)
+        working-directory: report-preview
+        run: |
+          npm ci
+          npm run build:css
+
+      - name: Install weekly-dashboard
+        working-directory: weekly-dashboard
+        run: npm ci
+
+      - name: Install Playwright (Chromium only)
+        working-directory: weekly-dashboard
+        run: npx playwright install --with-deps chromium
+
+      - name: Build weekly payload (Notion or sample)
+        working-directory: weekly-dashboard
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          NOTION_TAG_PROPERTY: ${{ vars.NOTION_TAG_PROPERTY }}
+          NOTION_TAG_VALUE: ${{ vars.NOTION_TAG_VALUE }}
+          NOTION_SKIP_TAG_FILTER: ${{ vars.NOTION_SKIP_TAG_FILTER }}
+          NOTION_STATUS_PROPERTY: ${{ vars.NOTION_STATUS_PROPERTY }}
+          NOTION_STATUS_DISABLE: ${{ vars.NOTION_STATUS_DISABLE }}
+          NOTION_DONE_STATUS_VALUES: ${{ vars.NOTION_DONE_STATUS_VALUES }}
+          NOTION_MILESTONE_PROPERTY: ${{ vars.NOTION_MILESTONE_PROPERTY }}
+          NOTION_MILESTONE_DISABLE: ${{ vars.NOTION_MILESTONE_DISABLE }}
+          NOTION_MILESTONE_SELECT_ORDER: ${{ vars.NOTION_MILESTONE_SELECT_ORDER }}
+          NOTION_MILESTONE_LABELS_JSON: ${{ vars.NOTION_MILESTONE_LABELS_JSON }}
+          NOTION_PRIORITY_PROPERTY: ${{ vars.NOTION_PRIORITY_PROPERTY }}
+          NOTION_WEEK_GOALS: ${{ secrets.NOTION_WEEK_GOALS }}
+          NOTION_WEEK_LABEL: ${{ vars.NOTION_WEEK_LABEL }}
+          NOTION_REPORT_LABEL: ${{ vars.NOTION_REPORT_LABEL }}
+          NOTION_REPORT_TITLE: ${{ vars.NOTION_REPORT_TITLE }}
+          NOTION_PROJECT_ID: ${{ vars.NOTION_PROJECT_ID }}
+          NOTION_TEMPLATE_VERSION: ${{ vars.NOTION_TEMPLATE_VERSION }}
+          NOTION_PROGRESS_MEMO_PROPERTY: ${{ vars.NOTION_PROGRESS_MEMO_PROPERTY }}
+        run: |
+          if [ -n "${NOTION_TOKEN:-}" ] && [ -n "${NOTION_DATABASE_ID:-}" ]; then
+            npm run notion:payload
+          else
+            cp data/sample-report.json data/notion-output.json
+          fi
+
+      - name: Generate HTML
+        working-directory: weekly-dashboard
+        run: npm run generate -- data/notion-output.json
+
+      - name: Screenshot dashboard
+        working-directory: weekly-dashboard
+        run: npm run screenshot
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-dashboard-dist
+          path: |
+            weekly-dashboard/dist/index.html
+            weekly-dashboard/dist/tailwind.css
+            weekly-dashboard/dist/report.png
+          if-no-files-found: error
+
+      - name: LINE Push if configured
+        working-directory: weekly-dashboard
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_TO_USER_ID: ${{ secrets.LINE_TO_USER_ID }}
+          LINE_IMAGE_ORIGINAL_URL: ${{ secrets.LINE_IMAGE_ORIGINAL_URL }}
+          LINE_IMAGE_PREVIEW_URL: ${{ secrets.LINE_IMAGE_PREVIEW_URL }}
+        run: npm run push:line -- data/notion-output.json

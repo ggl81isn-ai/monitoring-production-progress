@@ -1,0 +1,6 @@
+report-preview/node_modules/
+weekly-dashboard/node_modules/
+weekly-dashboard/dist/
+weekly-dashboard/data/notion-output.json
+weekly-dashboard/.env
+.env
