@@ -1,7 +1,7 @@
 /**
  * タグ列の絞り込み方（Notion API の database query filter）
- * - non_empty: タグが1つ以上付いている行だけ（既定）
- * - value: NOTION_TAG_VALUE のみ一致（従来の「制作」など1タグに限定）
+ * - value: NOTION_TAG_VALUE のみ（既定。multi_select は contains、select は equals）
+ * - non_empty: タグが1つ以上付いている行だけ
  * - both: 空でない かつ NOTION_TAG_VALUE を含む／一致
  */
 export type NotionTagFilterMode = "non_empty" | "value" | "both";
@@ -15,7 +15,7 @@ export interface NotionMappingEnv {
   /** multi_select / select のプロパティ表示名。skipTagFilter 時は null */
   tagProperty: string | null;
   tagValue: string;
-  /** `non_empty` 既定: タグが空でない行だけ取得し DB 全件を避ける */
+  /** 既定 `value`: 「タグ」列で NOTION_TAG_VALUE（例: 制作）に絞る */
   tagFilterMode: NotionTagFilterMode;
   skipTagFilter: boolean;
   /** status / select の「完了」判定用。カンマ区切り（例: 完了,Done） */
@@ -65,9 +65,9 @@ export function readNotionMappingEnv(): NotionMappingEnv {
 
   const modeRaw = process.env.NOTION_TAG_FILTER_MODE?.trim().toLowerCase() ?? "";
   let tagFilterMode: NotionTagFilterMode;
-  if (modeRaw === "value") tagFilterMode = "value";
-  else if (modeRaw === "both") tagFilterMode = "both";
-  else if (!modeRaw || modeRaw === "non_empty") tagFilterMode = "non_empty";
+  if (modeRaw === "both") tagFilterMode = "both";
+  else if (modeRaw === "non_empty") tagFilterMode = "non_empty";
+  else if (modeRaw === "value" || !modeRaw) tagFilterMode = "value";
   else {
     throw new Error(
       "NOTION_TAG_FILTER_MODE は non_empty / value / both のいずれかにしてください。"

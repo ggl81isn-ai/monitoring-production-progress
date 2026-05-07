@@ -74,12 +74,15 @@ npm run screenshot
 
 ### GitHub Actions でのタグ
 
-既定では **`NOTION_TAG_FILTER_MODE=non_empty`**（未設定も同じ）で、**タグ列に1つ以上付いている行だけ**を取得します。DB 全件は読みません。
+既定では **`NOTION_TAG_FILTER_MODE=value`**（未設定も同じ）で、**「タグ」列に「制作」が付いている行だけ**を取得し、**完了率・件数・次週アクション**もその集合だけを使います。
 
 - 列名が `タグ` でない場合は Variables に **`NOTION_TAG_PROPERTY`** を設定する。
-- **特定の1タグ（例: 制作）だけ**にしたいときは `NOTION_TAG_FILTER_MODE=value` と **`NOTION_TAG_VALUE`** を設定する。
+- 別のタグ名にしたい場合は **`NOTION_TAG_VALUE`** を変える。
+- **タグが1つでも付いていればよい**（制作に限らない）なら `NOTION_TAG_FILTER_MODE=non_empty`。
 - **「タグが付いている」かつ「制作を含む」**なら `NOTION_TAG_FILTER_MODE=both`。
-- どうしても全件読みに戻すときだけ **`NOTION_SKIP_TAG_FILTER=true`**（件数が多いと重いので注意）。
+- どうしても DB 全件を読むときだけ **`NOTION_SKIP_TAG_FILTER=true`**（非推奨）。
+
+**注意:** Repository Variables に **`NOTION_TAG_FILTER_MODE=non_empty`** を入れたままだと件数が膨らみます。**削除するか `value` に変更**してください。
 
 ---
 

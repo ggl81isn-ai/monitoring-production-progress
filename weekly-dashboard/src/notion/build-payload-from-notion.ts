@@ -33,6 +33,20 @@ function isDone(statusName: string | null, done: Set<string>): boolean {
   return done.has(statusName.trim().toLowerCase());
 }
 
+/** レポート用: どのタスク集合を数えているか（Notion クエリと一致させる） */
+function taskScopeLabel(env: NotionMappingEnv): string {
+  if (env.skipTagFilter) return "データベース全件の";
+  const prop = env.tagProperty ?? "タグ";
+  const val = env.tagValue?.trim() || "";
+  if (env.tagFilterMode === "value") {
+    return `「${prop}」で「${val}」が選ばれている`;
+  }
+  if (env.tagFilterMode === "both") {
+    return `「${prop}」が空でなく「${val}」を含む`;
+  }
+  return `「${prop}」にタグが1つ以上付いている`;
+}
+
 function signalFromRatio(done: number, total: number): {
   level: SignalLevel;
   statusLabel: string;
@@ -218,10 +232,11 @@ export async function buildWeeklyPayloadFromNotion(
   }));
 
   const titles = rows.map((r) => r.title).filter(Boolean);
+  const scope = taskScopeLabel(env);
   const bodyParts = [
     statusPropId
-      ? `対象タスク ${total} 件のうち完了 ${doneCount} 件。`
-      : `対象タスク ${total} 件を取得（ステータス列なしのため完了数は未判定）。`,
+      ? `${scope}タスク ${total} 件のうち、完了 ${doneCount} 件・未完了 ${total - doneCount} 件。`
+      : `${scope}タスク ${total} 件を取得（ステータス列なしのため完了数は未判定）。`,
     titles.length ? `主なタスク: ${titles.slice(0, 5).join("、")}。` : "",
   ];
   const memos = rows.map((r) => r.memo).filter(Boolean).slice(0, 2);
@@ -230,10 +245,10 @@ export async function buildWeeklyPayloadFromNotion(
   const captionParts = !statusPropId
     ? [
         "NOTION_STATUS_PROPERTY を設定すると、完了率から赤黄緑を推定します。",
-        `取得件数 ${total} 件。`,
+        `${scope}の取得 ${total} 件。`,
       ]
     : [
-        `完了率 ${total ? Math.round((doneCount / total) * 100) : 0}%（${doneCount}/${total}）。`,
+        `${scope}タスクの完了率 ${total ? Math.round((doneCount / total) * 100) : 0}%（完了 ${doneCount} / 全 ${total}）。`,
         incomplete.length
           ? `未完了が ${incomplete.length} 件（次週アクション参照）。`
           : "未完了タスクはありません。",
@@ -272,8 +287,8 @@ export async function buildWeeklyPayloadFromNotion(
     },
     weeklySummary: {
       lead: statusPropId
-        ? `完了 ${doneCount}/${total}。${sig.statusLabel.replace(/^見立て：/, "")}`
-        : `取得 ${total} 件。${sig.statusLabel.replace(/^見立て：/, "")}`,
+        ? `${scope}タスクで 完了 ${doneCount}/${total}。${sig.statusLabel.replace(/^見立て：/, "")}`
+        : `${scope}の取得 ${total} 件。${sig.statusLabel.replace(/^見立て：/, "")}`,
       body: bodyParts.join("").trim(),
     },
     nextActions:

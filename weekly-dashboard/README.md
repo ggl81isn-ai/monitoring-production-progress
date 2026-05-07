@@ -48,7 +48,7 @@ npm run screenshot
 3. DBに合わせてプロパティ名を調整する（タグ・ステータス・マイルストーンなど）。詳細は `.env.example` のコメント参照。
 4. `npm run notion:payload` で `data/notion-output.json` を生成する。
 
-**タグ列**: 既定は **`NOTION_TAG_FILTER_MODE=non_empty`**（未指定も同じ）で、**タグが1つ以上付いている行だけ**を Notion から取得します。特定タグだけにしたい場合は `.env.example` の `value` / `both` を参照。
+**タグ列**: 既定は **`NOTION_TAG_FILTER_MODE=value`**（未指定も同じ）で、**「タグ」に「制作」が付いた行だけ**を Notion から取得し、進捗もその件数で計算します。別モードは `.env.example` を参照。
 
 マイルストーン列が **select** のときは、`NOTION_MILESTONE_SELECT_ORDER` に左から 1〜4 に対応するオプション名をカンマ区切りで必ず指定する。
 
