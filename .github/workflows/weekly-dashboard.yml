@@ -16,12 +16,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Node 20 ランタイムの非推奨警告回避（公式ブログ: Node 24 対応版）
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
+          package-manager-cache: false
           cache-dependency-path: |
             report-preview/package-lock.json
             weekly-dashboard/package-lock.json
@@ -80,7 +82,7 @@ jobs:
         run: npm run screenshot
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: weekly-dashboard-dist
           path: |
