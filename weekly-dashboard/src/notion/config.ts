@@ -4,7 +4,7 @@
 export interface NotionMappingEnv {
   token: string;
   databaseId: string;
-  /** multi_select / select のプロパティ表示名。未設定で NOTION_SKIP_TAG_FILTER=true ならタグ絞り込みなし */
+  /** multi_select / select のプロパティ表示名。skipTagFilter 時は null */
   tagProperty: string | null;
   tagValue: string;
   skipTagFilter: boolean;
@@ -45,16 +45,21 @@ export function readNotionMappingEnv(): NotionMappingEnv {
   if (!token) throw new Error("NOTION_TOKEN が未設定です。");
   if (!databaseId) throw new Error("NOTION_DATABASE_ID が未設定です。");
 
-  const skipTagFilter =
+  /** 明示 true / 1、または「タグ列名が未指定で false も付いていない」ときはタグ絞り込みしない（CI の初期状態向け） */
+  const explicitSkipTag =
     process.env.NOTION_SKIP_TAG_FILTER === "1" ||
     process.env.NOTION_SKIP_TAG_FILTER === "true";
+  const explicitRequireTag =
+    process.env.NOTION_SKIP_TAG_FILTER === "0" ||
+    process.env.NOTION_SKIP_TAG_FILTER === "false";
 
   const tagProperty = process.env.NOTION_TAG_PROPERTY?.trim() || null;
-  if (!skipTagFilter && !tagProperty) {
-    throw new Error(
-      "NOTION_TAG_PROPERTY を設定するか、NOTION_SKIP_TAG_FILTER=true でタグ無しクエリにしてください。"
-    );
-  }
+  const skipTagFilter =
+    explicitSkipTag || (!explicitRequireTag && tagProperty == null);
+
+  const effectiveTagProperty = skipTagFilter
+    ? null
+    : (tagProperty ?? "タグ");
 
   const defaultMilestoneLabels: [string, string, string, string] = [
     "要件・方針FIX",
@@ -82,7 +87,7 @@ export function readNotionMappingEnv(): NotionMappingEnv {
   return {
     token,
     databaseId,
-    tagProperty,
+    tagProperty: effectiveTagProperty,
     tagValue: process.env.NOTION_TAG_VALUE?.trim() || "制作",
     skipTagFilter,
     doneStatusValues: parseCsvSet(

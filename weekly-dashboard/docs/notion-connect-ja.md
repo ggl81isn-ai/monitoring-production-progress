@@ -72,6 +72,10 @@ npm run screenshot
 
 `data/notion-output.json` が生成され、`dist/index.html` と `dist/report.png` が更新されれば接続できています。
 
+### GitHub Actions でのタグ
+
+Variables に **`NOTION_TAG_PROPERTY` を書いていない**場合は、**タグで絞り込まず DB 全件**を読みます（「制作」タグ未使用でも落ちない想定）。制作タグで絞りたくなったら、Repository variables に `NOTION_TAG_PROPERTY`（例: `タグ`）と `NOTION_TAG_VALUE`（例: `制作`）を設定し、必要なら `NOTION_SKIP_TAG_FILTER` を `false` にしてください。
+
 ---
 
 ## セキュリティの注意
