@@ -6,8 +6,8 @@ name: Weekly dashboard
 on:
   workflow_dispatch:
   schedule:
-    # 月曜 09:00 (JST) 前後 — GitHub は UTC のため 月 00:00 UTC
-    - cron: "0 0 * * 1"
+    # 金曜 21:00 (JST) 前後 — GitHub は UTC のため 金 12:00 UTC
+    - cron: "0 12 * * 5"
 
 permissions:
   contents: read
