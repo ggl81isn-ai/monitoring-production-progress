@@ -86,8 +86,37 @@ npm run screenshot
 
 ### ステータス列と「進行中」
 
+- **よくある運用:** タスクは **「未着手」「進行中」** などに置き、終わったら **「完了」** に移すと、**「完了」** が `NOTION_DONE_STATUS_VALUES` に含まれる限り完了として数えられます（**未着手**は「その他」内訳に入ります）。列名と環境変数が合っていれば **完了が常に 0 件になる心配は通常ありません**。
+- **`NOTION_STATUS_PROPERTY`** には、Notion 上の **プロパティの表示名**（例: `ステータス`）を **一字一句**合わせます。ここだけズレると、実際には完了にしているのに **完了 0 件扱い**になることがあります。
+- 列の型は **`status`（ワークフロー）・`select`・`multi_select`** に対応しています。`multi_select` のときは **付いているタグのどれか一つ**が `NOTION_DONE_STATUS_VALUES` に含まれれば完了とみなします。
+- 表示名で列が見つからないとき、データベースに **`status` 型の列が1つだけ**ある場合は、その列 ID に自動でフォールバックします（列名が英語などでデフォルトの `ステータス` と一致しないときの救済）。
 - **完了**は `NOTION_DONE_STATUS_VALUES`（既定: `完了,Done,done`）に含まれる表示名だけです。**「進行中」は完了に含めない**でください（含めると設定時にエラーになります）。
 - **進行中の件数**は `NOTION_IN_PROGRESS_STATUS_VALUES`（既定: `進行中`）に一致するステータスを数え、週次の本文・キャプションに出します。英語ワークスペースなら `In progress` などをカンマ区切りで追加できます。
+- 週次本文には **「制作」などで絞った件数のうち、完了・進行中・その他（未着手など）の内訳**が出ます。Notion の表と突き合わせるときの目安にしてください。
+
+### 件数が Notion の表と合わないとき
+
+- **（重要）Notion API のページでは `properties` のキーは「列の表示名」**（例: `ステータス`, `タグ`, `Name`）です。DB スキーマの **プロパティ ID だけ**では参照できないため、このリポジトリでは **表示名で値を読み取る**実装に直しています。完了が常に 0・内訳が全部 0 に見えていた場合は、この不整合が原因だった可能性が高いです。
+- **`NOTION_DATABASE_ID` は「そのデータベース自身」の ID** です。データベースを開いたときの URL の 32 文字ブロックを使い、**親のページや別 DB の ID** を入れていないか確認してください。
+- **タグ列が `relation`（他 DB 参照）**の場合、このリポジトリのタグ絞り込みには対応していません（`multi_select` / `select` の列名を `NOTION_TAG_PROPERTY` に指定してください）。
+- 切り分け用に **`NOTION_DIAGNOSTIC=true`** を `.env` に足してから `npm run notion:payload` を実行すると、**タグ列・ステータス列の解決結果と `sampleRows`（先頭数行のタイトル・ステータス・完了フラグ）**が JSON で出力されます。**トークンは含みません**。
+
+#### `sampleRows` をチャットなどに共有する手順（Windows / PowerShell）
+
+1. `weekly-dashboard` フォルダにある **`.env`** を開き、次の1行を追加（またはコメントを外す）します。  
+   `NOTION_DIAGNOSTIC=true`
+2. ターミナルで `weekly-dashboard` に移動してから実行します。
+
+```powershell
+cd weekly-dashboard
+npm run notion:payload
+```
+
+3. 実行が終わると、コンソールに `[NOTION_DIAGNOSTIC]` で始まる JSON が流れます。あわせて **`weekly-dashboard/data/notion-diagnostic.json`** に同じ内容のファイルが自動で作られます（フォルダが無ければ作成されます）。
+4. **共有のしかた**
+   - **ファイルを添付できる場合:** `notion-diagnostic.json` をそのまま送る。
+   - **テキストで貼る場合:** メモ帳や VS Code / Cursor で `notion-diagnostic.json` を開き、**`"sampleRows"` から始まる配列**だけ、またはファイル全体をコピーして貼り付ける。
+5. 保存先を変えたいときは `.env` に **`NOTION_DIAGNOSTIC_FILE=my-diagnostic.json`**（`weekly-dashboard` からの相対パス）や、**絶対パス**を指定できます。
 
 ---
 

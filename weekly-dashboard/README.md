@@ -38,7 +38,9 @@ npm run screenshot
 | `npm run screenshot` | `dist/index.html` を開き `dist/report.png` を出力 |
 | `npm run push:line` | LINE Push（テキスト＋任意で画像 URL）。トークン無しならスキップ |
 | `npm run build:weekly` | `notion:payload` → `generate` → `screenshot`（要 Notion の `.env`） |
+| `npm run build:weekly:line` | 上記に続けて `push:line`（同じ `data/notion-output.json` を送信） |
 | `npm run build:weekly:sample` | サンプル JSON で `generate` → `screenshot` |
+| `npm run build:weekly:sample:line` | サンプルで `generate` → `screenshot` → LINE（**Notion なしで LINE 試験向け**） |
 | `npm run typecheck` | 型チェック |
 
 ## Notion 連携
@@ -59,6 +61,7 @@ npm run screenshot
 - `NOTION_TOKEN` + `NOTION_DATABASE_ID` が無い場合はサンプル JSON で HTML と PNG を生成します。
 - LINE は `LINE_CHANNEL_ACCESS_TOKEN` と `LINE_TO_USER_ID` があるときだけ送信（無ければ `push:line` がスキップ）。
 
+LINE の作り方から Secrets まで: **`docs/line-setup-ja.md`**  
 シークレット一覧: `docs/ci-secrets.md`  
 成果物（Artifact）のダウンロード手順: `docs/github-artifacts-ja.md`
 
@@ -68,7 +71,11 @@ npm run screenshot
 
 ## LINE 画像について
 
-画像メッセージには **LINE が取得できる HTTPS URL** が必要です。CI だけでは自動アップロードしないため、公開ストレージや Raw URL 等で `LINE_IMAGE_*` を設定するか、テキストのみ運用してください（`automation-design/01-four-parts-recommendations.md`）。
+画像メッセージには **HTTPS の公開 URL** が必要です。
+
+- **自動（推奨）:** **`DISCORD_WEBHOOK_URL`**（Incoming Webhook）で `dist/report.png` を投稿し、返却 URL で LINE に画像を付けます。手順は `docs/line-setup-ja.md`。
+- **自動（補助）:** **`IMGUR_CLIENT_ID`** … Imgur の新規 API 登録ができない報告が多いため、Discord を推奨。
+- **手動:** **`LINE_IMAGE_ORIGINAL_URL`** と **`LINE_IMAGE_PREVIEW_URL`** の両方を設定すると最優先。
 
 ## 別の JSON で生成する
 

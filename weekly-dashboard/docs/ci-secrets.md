@@ -11,8 +11,10 @@
 | `NOTION_WEEK_GOALS` | 任意 | 改行区切りの今週の目標（長文はシークレット向き） |
 | `LINE_CHANNEL_ACCESS_TOKEN` | LINE 利用時 | Messaging API のチャネルアクセストークン |
 | `LINE_TO_USER_ID` | LINE 利用時 | プッシュ先のユーザー ID |
-| `LINE_IMAGE_ORIGINAL_URL` | 任意 | 画像メッセージ用（HTTPS）。未設定ならテキストのみ |
+| `LINE_IMAGE_ORIGINAL_URL` | 任意 | 画像メッセージ用（HTTPS）。**`LINE_IMAGE_PREVIEW_URL` とセット**で最優先 |
 | `LINE_IMAGE_PREVIEW_URL` | 任意 | プレビュー用画像 URL |
+| `DISCORD_WEBHOOK_URL` | 任意 | **上記2つ未設定時**、`dist/report.png` を Incoming Webhook で投稿し、返却の `attachments[].url` で LINE に画像を付ける（**推奨**。専用チャンネルにWebhookを作る） |
+| `IMGUR_CLIENT_ID` | 任意 | 同上を Imgur 匿名 API で行う（**新規 Client ID 登録が Imgur 側でできない報告が多い**ため、Discord の利用を推奨） |
 
 ### Variables（タグの絞り込み）
 

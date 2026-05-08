@@ -1,2 +1,4 @@
 node_modules/
 dist/
+# NOTION_DIAGNOSTIC=true 実行時の切り分け用（任意でコミットしない）
+data/notion-diagnostic.json

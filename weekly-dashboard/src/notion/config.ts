@@ -18,7 +18,7 @@ export interface NotionMappingEnv {
   /** 既定 `value`: 「タグ」列で NOTION_TAG_VALUE（例: 制作）に絞る */
   tagFilterMode: NotionTagFilterMode;
   skipTagFilter: boolean;
-  /** status / select の「完了」判定用。カンマ区切り（例: 完了,Done） */
+  /** status / select / multi_select の「完了」判定用（multi_select はいずれかのラベルが一致すれば完了）。カンマ区切り（例: 完了,Done） */
   doneStatusValues: Set<string>;
   /** レポートで「進行中」として数えるステータス名（小文字化して照合）。完了セットと重複不可 */
   inProgressStatusValues: Set<string>;

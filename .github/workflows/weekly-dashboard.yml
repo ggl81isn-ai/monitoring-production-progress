@@ -99,4 +99,7 @@ jobs:
           LINE_TO_USER_ID: ${{ secrets.LINE_TO_USER_ID }}
           LINE_IMAGE_ORIGINAL_URL: ${{ secrets.LINE_IMAGE_ORIGINAL_URL }}
           LINE_IMAGE_PREVIEW_URL: ${{ secrets.LINE_IMAGE_PREVIEW_URL }}
+          # 画像 URL 自動取得: DISCORD_WEBHOOK_URL 優先（Imgur は新規 Client ID が取れないことが多い）
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
         run: npm run push:line -- data/notion-output.json

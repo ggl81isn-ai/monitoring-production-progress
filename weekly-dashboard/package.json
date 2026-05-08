@@ -10,7 +10,9 @@
     "screenshot": "tsx src/screenshot.ts",
     "push:line": "tsx src/push-line.ts",
     "build:weekly": "npm run notion:payload && npm run generate -- data/notion-output.json && npm run screenshot",
+    "build:weekly:line": "npm run build:weekly && npm run push:line",
     "build:weekly:sample": "npm run generate -- data/sample-report.json && npm run screenshot",
+    "build:weekly:sample:line": "npm run build:weekly:sample && npm run push:line -- data/sample-report.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

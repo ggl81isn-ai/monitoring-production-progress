@@ -1,5 +1,6 @@
 import { Client, isFullPage } from "@notionhq/client";
 import type {
+  GetDatabaseResponse,
   PageObjectResponse,
   QueryDatabaseParameters,
 } from "@notionhq/client/build/src/api-endpoints.js";
@@ -11,10 +12,11 @@ import {
   getPlainTitle,
   getPriorityNumber,
   getRichTextPlain,
-  getStatusLikeName,
+  collectStatusLabels,
   getPropertyMetaByName,
   resolvePropertyId,
   findPropertyIdByType,
+  resolveStatusPropertyId,
 } from "./property-extract.js";
 import type { SignalLevel, WeeklyReportPayload } from "../types.js";
 
@@ -28,14 +30,50 @@ function weekRangeLabel(now: Date, override: string | null): string {
   return `対象週 ${format(start, "yyyy/MM/dd")}〜${format(end, "yyyy/MM/dd")}`;
 }
 
-function isDone(statusName: string | null, done: Set<string>): boolean {
-  if (!statusName) return false;
-  return done.has(statusName.trim().toLowerCase());
+function anyStatusLabelInSet(
+  labels: string[],
+  set: Set<string>
+): boolean {
+  return labels.some((l) => set.has(l.trim().toLowerCase()));
 }
 
-function statusInSet(statusName: string | null, set: Set<string>): boolean {
-  if (!statusName) return false;
-  return set.has(statusName.trim().toLowerCase());
+type NotionDbProps = GetDatabaseResponse["properties"];
+
+function propertyDisplayNameById(
+  dbProps: NotionDbProps,
+  propId: string | null
+): string | null {
+  if (!propId) return null;
+  for (const m of Object.values(dbProps)) {
+    if (m.id === propId) return m.name;
+  }
+  return null;
+}
+
+function notionDiagnosticEnabled(): boolean {
+  const v = process.env.NOTION_DIAGNOSTIC?.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
+
+/** `NOTION_DIAGNOSTIC=true` のときに CLI がファイルへ書き出す用（トークン等は含めない） */
+export interface NotionDiagnosticSnapshot {
+  databaseId: string;
+  skipTagFilter: boolean;
+  tagPropertyName: string | null;
+  tagFilterPropertyId: string | null;
+  tagFilterPropertyType: string | null;
+  tagValue: string;
+  tagFilterMode: string;
+  statusPropertyEnv: string | null;
+  statusResolvedId: string | null;
+  statusResolvedName: string | null;
+  statusResolvedSchemaType: string | null;
+  pageCount: number;
+  rowCount: number;
+  doneCount: number;
+  inProgressCount: number;
+  otherStatusCount: number;
+  sampleRows: Array<{ title: string; statusLabels: string[]; done: boolean }>;
 }
 
 /** レポート用: どのタスク集合を数えているか（Notion クエリと一致させる） */
@@ -67,14 +105,17 @@ function signalFromRatio(done: number, total: number): {
 
 export async function buildWeeklyPayloadFromNotion(
   env: NotionMappingEnv
-): Promise<WeeklyReportPayload> {
+): Promise<{
+  payload: WeeklyReportPayload;
+  diagnostic: NotionDiagnosticSnapshot | null;
+}> {
   const notion = new Client({ auth: env.token });
   const db = await notion.databases.retrieve({ database_id: env.databaseId });
   const dbProps = db.properties;
 
   const titlePropId = findPropertyIdByType(dbProps, "title");
   const statusPropId = env.statusProperty
-    ? resolvePropertyId(dbProps, env.statusProperty)
+    ? resolveStatusPropertyId(dbProps, env.statusProperty)
     : null;
   const milestonePropId = env.milestoneProperty
     ? resolvePropertyId(dbProps, env.milestoneProperty)
@@ -96,12 +137,21 @@ export async function buildWeeklyPayloadFromNotion(
   }
 
   let filter: QueryDatabaseParameters["filter"] | undefined;
+  /** タグ列の DB 上のプロパティ ID（クエリ filter の property には ID 推奨・表示名の不可視差異を避ける） */
+  let tagFilterPropertyId: string | null = null;
+  let tagFilterPropertyType: string | null = null;
   if (!env.skipTagFilter && env.tagProperty) {
     const tagPropName = env.tagProperty;
     const tagMeta = getPropertyMetaByName(dbProps, tagPropName);
     if (!tagMeta) {
       throw new Error(`タグプロパティ「${tagPropName}」がデータベースに見つかりません。`);
     }
+    if (!tagMeta.id?.trim()) {
+      throw new Error(`タグプロパティ「${tagPropName}」に id がありません（Notion API の不整合）。`);
+    }
+    const tagPropertyIdForFilter: string = tagMeta.id;
+    tagFilterPropertyId = tagPropertyIdForFilter;
+    tagFilterPropertyType = tagMeta.type;
 
     const nonEmptyFilter = (): Extract<
       QueryDatabaseParameters["filter"],
@@ -109,18 +159,18 @@ export async function buildWeeklyPayloadFromNotion(
     > => {
       if (tagMeta.type === "multi_select") {
         return {
-          property: tagPropName,
+          property: tagPropertyIdForFilter,
           multi_select: { is_not_empty: true },
         };
       }
       if (tagMeta.type === "select") {
         return {
-          property: tagPropName,
+          property: tagPropertyIdForFilter,
           select: { is_not_empty: true },
         };
       }
       throw new Error(
-        `タグ列「${tagPropName}」は multi_select か select である必要があります（実際は ${tagMeta.type}）。`
+        `タグ列「${tagPropName}」は multi_select か select である必要があります（実際は ${tagMeta.type}）。relation の場合は別 DB 参照のため、このツールのタグ絞り込みには使えません。`
       );
     };
 
@@ -132,13 +182,13 @@ export async function buildWeeklyPayloadFromNotion(
       if (!v) return null;
       if (tagMeta.type === "multi_select") {
         return {
-          property: tagPropName,
+          property: tagPropertyIdForFilter,
           multi_select: { contains: v },
         };
       }
       if (tagMeta.type === "select") {
         return {
-          property: tagPropName,
+          property: tagPropertyIdForFilter,
           select: { equals: v },
         };
       }
@@ -177,30 +227,76 @@ export async function buildWeeklyPayloadFromNotion(
       start_cursor: cursor,
     });
     for (const row of res.results) {
-      if (isFullPage(row)) pages.push(row);
+      if (isFullPage(row) && !row.archived && !row.in_trash) pages.push(row);
     }
     cursor = res.has_more ? res.next_cursor ?? undefined : undefined;
   } while (cursor);
 
   const rows = pages.map((p) => {
-    const title = getPlainTitle(p, titlePropId);
-    const status = getStatusLikeName(p, statusPropId);
-    const done = statusPropId ? isDone(status, env.doneStatusValues) : false;
+    const title = getPlainTitle(p, dbProps, titlePropId);
+    const statusLabels = statusPropId
+      ? collectStatusLabels(
+          p,
+          dbProps,
+          statusPropId,
+          env.statusProperty
+        )
+      : [];
+    const status =
+      statusLabels.length > 0 ? statusLabels.join("・") : null;
+    const done = statusPropId
+      ? anyStatusLabelInSet(statusLabels, env.doneStatusValues)
+      : false;
     const step = milestonePropId
-      ? getMilestoneStep(p, milestonePropId, env.milestoneSelectOrder)
+      ? getMilestoneStep(
+          p,
+          dbProps,
+          milestonePropId,
+          env.milestoneProperty,
+          env.milestoneSelectOrder
+        )
       : null;
-    const prio = getPriorityNumber(p, priorityPropId);
-    const memo = getRichTextPlain(p, memoPropId);
-    return { page: p, title, status, done, step, prio, memo };
+    const prio = getPriorityNumber(
+      p,
+      dbProps,
+      priorityPropId,
+      env.priorityProperty
+    );
+    const memo = getRichTextPlain(
+      p,
+      dbProps,
+      memoPropId,
+      env.progressMemoProperty
+    );
+    return {
+      page: p,
+      title,
+      status,
+      statusLabels,
+      done,
+      step,
+      prio,
+      memo,
+    };
   });
 
   const total = rows.length;
   const doneCount = rows.filter((r) => r.done).length;
   const inProgressCount = statusPropId
     ? rows.filter((r) =>
-        statusInSet(r.status, env.inProgressStatusValues)
+        anyStatusLabelInSet(r.statusLabels, env.inProgressStatusValues)
       ).length
     : 0;
+  /** 完了でも進行中でもない（未着手・保留・空ラベルなど） */
+  const otherStatusCount =
+    statusPropId && total > 0
+      ? rows.filter(
+          (r) =>
+            Boolean(r.title) &&
+            !r.done &&
+            !anyStatusLabelInSet(r.statusLabels, env.inProgressStatusValues)
+        ).length
+      : 0;
   const sig = !statusPropId
     ? {
         level: "yellow" as const,
@@ -245,8 +341,10 @@ export async function buildWeeklyPayloadFromNotion(
   const scope = taskScopeLabel(env);
   const bodyParts = [
     statusPropId
-      ? `${scope}タスク ${total} 件のうち、完了 ${doneCount} 件・未完了 ${total - doneCount} 件。` +
-          (inProgressCount > 0 ? ` 未完了のうち「進行中」は ${inProgressCount} 件。` : "")
+      ? `${scope}タスク ${total} 件。完了 ${doneCount}、未完了 ${total - doneCount}。` +
+          (total > 0
+            ? `内訳（タイトルあり・完了以外）: 進行中 ${inProgressCount}・その他（未着手など）${otherStatusCount}。`
+            : "")
       : `${scope}タスク ${total} 件を取得（ステータス列なしのため完了数は未判定）。`,
     titles.length ? `主なタスク: ${titles.slice(0, 5).join("、")}。` : "",
   ];
@@ -276,7 +374,42 @@ export async function buildWeeklyPayloadFromNotion(
     process.env.NOTION_WEEK_LABEL?.trim() || null
   );
 
-  return {
+  let diagnostic: NotionDiagnosticSnapshot | null = null;
+  if (notionDiagnosticEnabled()) {
+    const statusMeta = statusPropId
+      ? Object.values(dbProps).find((m) => m.id === statusPropId)
+      : undefined;
+    const sampleRows = rows.slice(0, 8).map((r) => ({
+      title: r.title.slice(0, 60),
+      statusLabels: r.statusLabels,
+      done: r.done,
+    }));
+    diagnostic = {
+      databaseId: env.databaseId,
+      skipTagFilter: env.skipTagFilter,
+      tagPropertyName: env.tagProperty,
+      tagFilterPropertyId,
+      tagFilterPropertyType,
+      tagValue: env.tagValue,
+      tagFilterMode: env.tagFilterMode,
+      statusPropertyEnv: env.statusProperty,
+      statusResolvedId: statusPropId,
+      statusResolvedName: propertyDisplayNameById(dbProps, statusPropId),
+      statusResolvedSchemaType: statusMeta?.type ?? null,
+      pageCount: pages.length,
+      rowCount: rows.length,
+      doneCount,
+      inProgressCount,
+      otherStatusCount,
+      sampleRows,
+    };
+    console.warn(
+      "[NOTION_DIAGNOSTIC]",
+      JSON.stringify(diagnostic, null, 2)
+    );
+  }
+
+  const payload: WeeklyReportPayload = {
     meta: {
       projectId: env.projectId,
       templateVersion: env.templateVersion,
@@ -315,4 +448,6 @@ export async function buildWeeklyPayloadFromNotion(
             },
           ],
   };
+
+  return { payload, diagnostic };
 }
