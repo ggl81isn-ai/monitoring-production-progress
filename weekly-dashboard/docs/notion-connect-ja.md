@@ -93,6 +93,17 @@ npm run screenshot
 - **完了**は `NOTION_DONE_STATUS_VALUES`（既定: `完了,Done,done`）に含まれる表示名だけです。**「進行中」は完了に含めない**でください（含めると設定時にエラーになります）。
 - **進行中の件数**は `NOTION_IN_PROGRESS_STATUS_VALUES`（既定: `進行中`）に一致するステータスを数え、週次の本文・キャプションに出します。英語ワークスペースなら `In progress` などをカンマ区切りで追加できます。
 - 週次本文には **「制作」などで絞った件数のうち、完了・進行中・その他（未着手など）の内訳**が出ます。Notion の表と突き合わせるときの目安にしてください。
+- ステータス名に絵文字や接頭辞が付くケース（例: `✅ 完了`）でも取りこぼしにくいよう、`NOTION_DONE_STATUS_VALUES` / `NOTION_IN_PROGRESS_STATUS_VALUES` は**部分一致**でも判定します。
+
+### 今週の目標・次週アクションの作り方
+
+- 既定では、`NOTION_WEEK_GOALS` / `NOTION_NEXT_ACTIONS` が未設定なら、未完了タスク上位3件から自動で作ります。
+- 手入力で固定したいときは、`.env` か Actions Secrets に以下を改行区切りで設定します。  
+  - `NOTION_WEEK_GOALS`  
+  - `NOTION_NEXT_ACTIONS`
+- タスク由来の自動生成を止めたいときは、次を `false` にします。  
+  - `NOTION_DERIVE_GOALS_FROM_TASKS=false`  
+  - `NOTION_DERIVE_NEXT_ACTIONS_FROM_TASKS=false`
 
 ### 件数が Notion の表と合わないとき
 

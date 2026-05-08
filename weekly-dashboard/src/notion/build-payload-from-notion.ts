@@ -34,7 +34,20 @@ function anyStatusLabelInSet(
   labels: string[],
   set: Set<string>
 ): boolean {
-  return labels.some((l) => set.has(l.trim().toLowerCase()));
+  const normalize = (s: string): string =>
+    s
+      .normalize("NFKC")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  const normalizedTargets = [...set].map(normalize).filter(Boolean);
+  return labels.some((label) => {
+    const n = normalize(label);
+    if (!n) return false;
+    if (normalizedTargets.includes(n)) return true;
+    // 絵文字や接頭辞付き（例: "✅ 完了"）を拾えるよう部分一致も許容
+    return normalizedTargets.some((t) => t.length >= 2 && n.includes(t));
+  });
 }
 
 type NotionDbProps = GetDatabaseResponse["properties"];
@@ -321,21 +334,36 @@ export async function buildWeeklyPayloadFromNotion(
       );
     });
 
-  let goals: string[];
-  if (env.weekGoalsText) {
-    goals = env.weekGoalsText
+  const parseMultiline = (v: string): string[] =>
+    v
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
-  } else {
+
+  let goals: string[];
+  if (env.weekGoalsText) {
+    goals = parseMultiline(env.weekGoalsText);
+  } else if (env.deriveGoalsFromTasks) {
     goals = incomplete.slice(0, 3).map((r) => r.title);
-    if (goals.length === 0) goals = ["（今週の目標を NOTION_WEEK_GOALS で指定するか、未完了タスクをDBに追加してください）"];
+  } else {
+    goals = ["（今週の目標は NOTION_WEEK_GOALS を設定して入力してください）"];
+  }
+  if (goals.length === 0) {
+    goals = ["（今週の目標を NOTION_WEEK_GOALS で指定するか、未完了タスクをDBに追加してください）"];
   }
 
-  const nextActions = incomplete.slice(0, 3).map((r) => ({
-    id: r.page.id.replace(/-/g, "").slice(0, 12),
-    text: r.title,
-  }));
+  const nextActions =
+    env.nextActionsText != null
+      ? parseMultiline(env.nextActionsText).map((text, i) => ({
+          id: `manual-${i + 1}`,
+          text,
+        }))
+      : env.deriveNextActionsFromTasks
+        ? incomplete.slice(0, 3).map((r) => ({
+            id: r.page.id.replace(/-/g, "").slice(0, 12),
+            text: r.title,
+          }))
+        : [];
 
   const titles = rows.map((r) => r.title).filter(Boolean);
   const scope = taskScopeLabel(env);
@@ -444,7 +472,10 @@ export async function buildWeeklyPayloadFromNotion(
         : [
             {
               id: "placeholder",
-              text: "（次に着手するタスクを Notion に未完了で登録してください）",
+              text:
+                env.deriveNextActionsFromTasks
+                  ? "（次に着手するタスクを Notion に未完了で登録してください）"
+                  : "（次週アクションは NOTION_NEXT_ACTIONS に改行区切りで設定してください）",
             },
           ],
   };

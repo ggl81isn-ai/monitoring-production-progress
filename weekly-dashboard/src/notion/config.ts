@@ -32,6 +32,12 @@ export interface NotionMappingEnv {
   priorityProperty: string | null;
   /** 今週の目標: 改行区切りテキスト。空なら未完了タスク名から最大3件 */
   weekGoalsText: string | null;
+  /** 次週アクション: 改行区切りテキスト。空なら未完了タスク名から最大3件（設定で無効化可） */
+  nextActionsText: string | null;
+  /** true のとき、NOTION_WEEK_GOALS が未設定なら未完了タスクから目標を補完する */
+  deriveGoalsFromTasks: boolean;
+  /** true のとき、NOTION_NEXT_ACTIONS が未設定なら未完了タスクから次週アクションを補完する */
+  deriveNextActionsFromTasks: boolean;
   reportLabel: string;
   reportTitle: string;
   projectId: string;
@@ -55,6 +61,14 @@ function assertDisjointSets(a: Set<string>, b: Set<string>, msg: string): void {
 function parseCsvArray(s: string | undefined, fallback: string[]): string[] {
   if (!s?.trim()) return [...fallback];
   return s.split(",").map((x) => x.trim()).filter(Boolean);
+}
+
+function parseBool(s: string | undefined, fallback: boolean): boolean {
+  if (!s?.trim()) return fallback;
+  const v = s.trim().toLowerCase();
+  if (v === "1" || v === "true" || v === "yes" || v === "on") return true;
+  if (v === "0" || v === "false" || v === "no" || v === "off") return false;
+  return fallback;
 }
 
 export function readNotionMappingEnv(): NotionMappingEnv {
@@ -144,6 +158,15 @@ export function readNotionMappingEnv(): NotionMappingEnv {
     ),
     priorityProperty: process.env.NOTION_PRIORITY_PROPERTY?.trim() || null,
     weekGoalsText: process.env.NOTION_WEEK_GOALS?.trim() || null,
+    nextActionsText: process.env.NOTION_NEXT_ACTIONS?.trim() || null,
+    deriveGoalsFromTasks: parseBool(
+      process.env.NOTION_DERIVE_GOALS_FROM_TASKS,
+      true
+    ),
+    deriveNextActionsFromTasks: parseBool(
+      process.env.NOTION_DERIVE_NEXT_ACTIONS_FROM_TASKS,
+      true
+    ),
     reportLabel:
       process.env.NOTION_REPORT_LABEL?.trim() ||
       "週次レポート・自分用 / アプリ制作",
